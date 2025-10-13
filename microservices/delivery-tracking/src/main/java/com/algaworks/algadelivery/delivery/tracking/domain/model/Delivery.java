@@ -22,6 +22,7 @@ public class Delivery {
     @Id
     @EqualsAndHashCode.Include
     private UUID id;
+
     private UUID courierId;
 
     private DeliveryStatus status;
@@ -29,7 +30,7 @@ public class Delivery {
     private OffsetDateTime placedAt;
     private OffsetDateTime assignedAt;
     private OffsetDateTime expectedDeliveryAt;
-    private OffsetDateTime fullfilledAt;
+    private OffsetDateTime fulfilledAt;
 
     private BigDecimal distanceFee;
     private BigDecimal courierPayout;
@@ -65,7 +66,7 @@ public class Delivery {
     public static Delivery draft() {
         Delivery delivery = new Delivery();
         delivery.setId(UUID.randomUUID());
-        delivery.setStatus(DeliveryStatus.DRAFT);
+        delivery.setStatus( DeliveryStatus.DRAFT);
         delivery.setTotalItems(0);
         delivery.setTotalCost(BigDecimal.ZERO);
         delivery.setCourierPayout(BigDecimal.ZERO);
@@ -73,16 +74,41 @@ public class Delivery {
         return delivery;
     }
 
-    public UUID addItem(String name, Integer quantity) {
+    public UUID addItem(String name, int quantity) {
         Item item = Item.brandNew(name, quantity, this);
         items.add(item);
         calculateTotalItems();
         return item.getId();
     }
 
-    public void removeItems(UUID itemId) {
+    public void removeItem(UUID itemId) {
         items.removeIf(item -> item.getId().equals(itemId));
         calculateTotalItems();
+    }
+
+    public void changeItemQuantity(UUID itemId, int quantity) {
+        Item item = getItems().stream().filter(i -> i.getId().equals(itemId))
+                .findFirst().orElseThrow();
+
+        item.setQuantity(quantity);
+        calculateTotalItems();
+    }
+
+    public void removeItems() {
+        items.clear();
+        calculateTotalItems();
+    }
+
+    public void editPreparationDetails(PreparationDetails details) {
+        verifyIfCanBeEdited();
+
+        setSender(details.getSender());
+        setRecipient(details.getRecipient());
+        setDistanceFee(details.getDistanceFee());
+        setCourierPayout(details.getCourierPayout());
+
+        setExpectedDeliveryAt(OffsetDateTime.now().plus(details.getExpectedDeliveryTime()));
+        setTotalCost(this.getDistanceFee().add(this.getCourierPayout()));
     }
 
     public void place() {
@@ -98,33 +124,8 @@ public class Delivery {
     }
 
     public void markAsDelivered() {
-        this.changeStatusTo(DeliveryStatus.DELIVERIED);
-        this.setFullfilledAt(OffsetDateTime.now());
-    }
-
-    public void changeItemQuantity(UUID itemId, Integer newQuantity) {
-        var item = getItems().stream()
-                .filter(i ->  i.getId().equals(itemId))
-                .findFirst()
-                .orElseThrow();
-
-        item.setQuantity(newQuantity);
-        calculateTotalItems();
-    }
-
-    public void removeItems() {
-        items.clear();
-        calculateTotalItems();
-    }
-
-    public void editPrepartionDetails(PrepartionDetails details) {
-        verifyIfCanBeEdited();
-        setSender(details.getSender());
-        setRecipient(details.getRecipient());
-        setDistanceFee(details.getDistanceFee());
-        setCourierPayout(details.getCourierPayout());
-        setExpectedDeliveryAt(OffsetDateTime.now().plus(details.getExpectedDeliveryTime()));
-        setTotalCost(this.getDistanceFee().add(this.getCourierPayout()));
+        this.changeStatusTo(DeliveryStatus.DELIVERED);
+        this.setFulfilledAt(OffsetDateTime.now());
     }
 
     public List<Item> getItems() {
@@ -132,17 +133,15 @@ public class Delivery {
     }
 
     private void calculateTotalItems() {
-        int totalItems = getItems().stream()
-                .mapToInt(Item::getQuantity)
-                .sum();
-        this.setTotalItems(totalItems);
+        int totalItems = getItems().stream().mapToInt(Item::getQuantity).sum();
+        setTotalItems(totalItems);
     }
 
     private void verifyIfCanBePlaced() {
         if (!isFilled()) {
             throw new DomainException();
         }
-        if (getStatus().equals(DeliveryStatus.DRAFT)) {
+        if (!getStatus().equals(DeliveryStatus.DRAFT)) {
             throw new DomainException();
         }
     }
@@ -154,8 +153,8 @@ public class Delivery {
     }
 
     private boolean isFilled() {
-        return getSender() != null
-                && getRecipient() != null
+        return this.getSender() != null
+                && this.getRecipient() != null
                 && this.getTotalCost() != null;
     }
 
@@ -172,7 +171,7 @@ public class Delivery {
     @Getter
     @AllArgsConstructor
     @Builder
-    public static class PrepartionDetails {
+    public static class PreparationDetails {
         private ContactPoint sender;
         private ContactPoint recipient;
         private BigDecimal distanceFee;

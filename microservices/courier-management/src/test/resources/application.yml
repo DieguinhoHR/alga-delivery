@@ -1,14 +1,11 @@
-server:
-  port: 8081
-
 spring:
   application:
-    name: delivery-tracking
+    name: courier-management
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: false
   datasource:
-    url: jdbc:postgresql://localhost:5433/deliverydb
+    url: jdbc:postgresql://localhost:5433/courierdb_test
     username: postgres
     password: postgres

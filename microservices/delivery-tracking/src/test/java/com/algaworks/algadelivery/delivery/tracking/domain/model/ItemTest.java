@@ -11,7 +11,7 @@ class ItemTest {
         String name = "Produto";
         Integer quantity = 2;
 
-        Item item = Item.brandNew(name, quantity);
+        Item item = Item.brandNew(name, quantity, new Delivery());
 
         assertNotNull(item.getId());
         assertEquals(name, item.getName());
