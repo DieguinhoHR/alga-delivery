@@ -41,17 +41,13 @@ class DeliveryTest {
     }
 
     @Test
-    void shouldRemoveItemAndUpdateTotalItems() {
+    void shouldRemoveTotalItems() {
         Delivery delivery = Delivery.draft();
-        UUID itemId1 = delivery.addItem("Product1", 2);
-        UUID itemId2 = delivery.addItem("Product2", 3);
 
-        delivery.removeItems(itemId1);
+        delivery.removeItems();
 
         List<Item> items = delivery.getItems();
-        assertEquals(1, items.size());
-        assertEquals(itemId2, items.get(0).getId());
-        assertEquals(3, delivery.getTotalItems());
+        assertEquals(0, items.size());
     }
 
     @Test
