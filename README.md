@@ -25,5 +25,7 @@ Antes de iniciar, certifique-se de ter instalado:
 Acessar os serviços
 
 Gateway: http://localhost:8080
+
 Eureka Server: http://localhost:8761
+
 Config Server: http://localhost:8888
